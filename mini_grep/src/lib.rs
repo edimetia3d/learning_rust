@@ -19,6 +19,17 @@ pub fn grep_on_cli_arg(arg: &CLIArgs) -> Result<String, Box<dyn Error>> {
 }
 
 fn search<'a>(query: &str, content: &'a str) -> Vec<&'a str> {
+    let lowerd_query = query.to_lowercase();
+    let mut ret = Vec::new();
+    for line in content.lines() {
+        if line.to_lowercase().contains(&lowerd_query) {
+            ret.push(line);
+        }
+    }
+    return ret;
+}
+
+fn case_sensitive_search<'a>(query: &str, content: &'a str) -> Vec<&'a str> {
     let mut ret = Vec::new();
     for line in content.lines() {
         if line.contains(query) {
@@ -43,6 +54,47 @@ it is your time";
 
         let expected = vec!["my son,"];
 
-        assert_eq!(expected, search(query, content));
+        assert_eq!(expected, case_sensitive_search(query, content));
+    }
+
+    #[test]
+    fn case_sensitive_one_line() {
+        let content =
+            "?
+Come,
+my Son,
+it IS your time";
+
+        let empty_ans: Vec<&str> = vec![];
+        assert_eq!(empty_ans, case_sensitive_search("come", content));
+        assert_eq!(vec!["Come,"], case_sensitive_search("Come", content));
+
+        assert_eq!(empty_ans, case_sensitive_search("son", content));
+        assert_eq!(vec!["my Son,"], case_sensitive_search("Son", content));
+
+        assert_eq!(empty_ans, case_sensitive_search("Is", content));
+        assert_eq!(vec!["it IS your time"], case_sensitive_search("IS", content));
+    }
+
+    #[test]
+    fn case_insensitive_one_line() {
+        let content =
+            "?
+Come,
+my Son,
+it IS your time";
+
+        let empty_ans: Vec<&str> = vec![];
+        let mut expected = vec!["Come,"];
+        assert_eq!(expected, search("come", content));
+        assert_eq!(expected, search("Come", content));
+
+        expected = vec!["my Son,"];
+        assert_eq!(expected, search("son", content));
+        assert_eq!(expected, search("Son", content));
+
+        expected = vec!["it IS your time"];
+        assert_eq!(expected, search("Is", content));
+        assert_eq!(expected, search("IS", content));
     }
 }
