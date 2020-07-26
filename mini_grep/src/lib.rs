@@ -11,7 +11,13 @@ pub fn grep_on_cli_arg(arg: &CLIArgs) -> Result<String, Box<dyn Error>> {
 }
 
 fn search<'a>(query: &str, content: &'a str) -> Vec<&'a str> {
-    return vec![];
+    let mut ret = Vec::new();
+    for line in content.lines() {
+        if line.contains(query) {
+            ret.push(line);
+        }
+    }
+    return ret;
 }
 
 #[cfg(test)]
@@ -21,10 +27,11 @@ mod test_search {
     #[test]
     fn one_line() {
         let query = "son";
-        let content = "?\
-        come,\
-        my son,\
-        it is your time";
+        let content =
+            "?
+come,
+my son,
+it is your time";
 
         let expected = vec!["my son,"];
 
