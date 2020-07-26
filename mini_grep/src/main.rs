@@ -11,5 +11,5 @@ fn main() {
         println!("Failed grep in file:{}\n{}", cli_arg.filename, err);
         process::exit(2);
     });
-    println!("Content:\n {}", filterd_str);
+    println!("======Found======\n{}", filterd_str);
 }
