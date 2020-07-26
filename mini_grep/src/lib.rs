@@ -4,10 +4,17 @@ use std::fs;
 use std::error::Error;
 
 use opt::CLIArgs;
+use crate::opt::CaseType;
 
 pub fn grep_on_cli_arg(arg: &CLIArgs) -> Result<String, Box<dyn Error>> {
     let content = fs::read_to_string(&arg.filename)?;
-    let ans = search(&arg.query, &content);
+    let ans;
+    if arg.case_sensitive == CaseType::SENSITIVE {
+        ans = case_sensitive_search(&arg.query, &content);
+    } else {
+        ans = case_insensitive_search(&arg.query, &content);
+    }
+
     let mut ret: String = "".to_string();
     for line in ans.iter() {
         ret.push_str(line);
@@ -18,7 +25,7 @@ pub fn grep_on_cli_arg(arg: &CLIArgs) -> Result<String, Box<dyn Error>> {
     return Result::Ok(ret);
 }
 
-fn search<'a>(query: &str, content: &'a str) -> Vec<&'a str> {
+fn case_insensitive_search<'a>(query: &str, content: &'a str) -> Vec<&'a str> {
     let lowerd_query = query.to_lowercase();
     let mut ret = Vec::new();
     for line in content.lines() {
@@ -86,15 +93,15 @@ it IS your time";
 
         let empty_ans: Vec<&str> = vec![];
         let mut expected = vec!["Come,"];
-        assert_eq!(expected, search("come", content));
-        assert_eq!(expected, search("Come", content));
+        assert_eq!(expected, case_insensitive_search("come", content));
+        assert_eq!(expected, case_insensitive_search("Come", content));
 
         expected = vec!["my Son,"];
-        assert_eq!(expected, search("son", content));
-        assert_eq!(expected, search("Son", content));
+        assert_eq!(expected, case_insensitive_search("son", content));
+        assert_eq!(expected, case_insensitive_search("Son", content));
 
         expected = vec!["it IS your time"];
-        assert_eq!(expected, search("Is", content));
-        assert_eq!(expected, search("IS", content));
+        assert_eq!(expected, case_insensitive_search("Is", content));
+        assert_eq!(expected, case_insensitive_search("IS", content));
     }
 }
