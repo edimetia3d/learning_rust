@@ -1,9 +1,13 @@
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::sync::Mutex;
-use std::thread;
+use std::{thread, io};
+use std::io::Write;
 
-type Job = Box<dyn FnOnce() + Send + 'static>;
+enum JobMsg {
+    JOB(Box<dyn FnOnce() + Send + 'static>),
+    TERMINATE,
+}
 
 struct Worker {
     id: usize,
@@ -11,14 +15,22 @@ struct Worker {
 }
 
 impl Worker {
-    fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Job>>>) -> Worker {
+    fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<JobMsg>>>) -> Worker {
         let thread = thread::spawn(move ||
             loop {
-                let job = receiver.lock().unwrap().recv().unwrap();
+                let msg = receiver.lock().unwrap().recv().unwrap();
 
-                println!("Worker {} got a job; executing.", id);
 
-                job();
+                match msg {
+                    JobMsg::JOB(job) => {
+                        println!("Worker {} got a job.", id);
+                        job()
+                    }
+                    JobMsg::TERMINATE => {
+                        println!("Worker {} got a terminate msg", id);
+                        return;
+                    }
+                }
             });
 
         Worker { id, thread }
@@ -27,7 +39,7 @@ impl Worker {
 
 pub struct ThreadPool {
     workers: Vec<Worker>,
-    sender: mpsc::Sender<Job>,
+    sender: mpsc::Sender<JobMsg>,
 }
 
 impl ThreadPool {
@@ -53,7 +65,22 @@ impl ThreadPool {
     {
         let job = Box::new(f);
 
-        self.sender.send(job).unwrap();
+        self.sender.send(JobMsg::JOB(job)).unwrap();
     }
 }
 
+impl Drop for ThreadPool {
+    fn drop(&mut self) {
+        for worker in self.workers.iter_mut() {
+            println!("Sending Quit Msg to worker {}", worker.id);
+
+            self.sender.send(JobMsg::TERMINATE).unwrap();
+        }
+
+        for worker in self.workers.drain(..) {
+            worker.thread.join().unwrap();
+            println!("Worker {} stopped", worker.id);
+        }
+        io::stdout().flush().unwrap();
+    }
+}
