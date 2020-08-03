@@ -91,7 +91,6 @@ Come,
 my Son,
 it IS your time";
 
-        let empty_ans: Vec<&str> = vec![];
         let mut expected = vec!["Come,"];
         assert_eq!(expected, case_insensitive_search("come", content));
         assert_eq!(expected, case_insensitive_search("Come", content));

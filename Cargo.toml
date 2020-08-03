@@ -2,4 +2,5 @@
 
 members = [
     "mini_grep",
+    "mini_httpd"
 ]
